@@ -179,17 +179,16 @@ def setup_sockets(proxy_port_number):
     # Bind the socket to the address and the port number
     server_socket.bind(server_address)
     server_socket.setsockopt(
-        socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Re-use the socket
+        socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Re-use the socket
 
     # Listen for clients
     server_socket.listen(11)
     while True:
         # Establish a connection
         client_socket, address = server_socket.accept()
-        #accept_clients(client_socket, address)
-        thread = threading.Thread(target=accept_clients, args=(client_socket, address, ))
+        # accept_clients(client_socket, address)
+        thread = threading.Thread(target=accept_clients, args=(client_socket, address,))
         thread.start()
-    server_socket.close()
 
     # when calling socket.listen() pass a number
     # that's larger than 10 to avoid rejecting
@@ -199,12 +198,11 @@ def setup_sockets(proxy_port_number):
 
 def accept_clients(client_socket, address):
     request = get_client_request(client_socket)
-    has_error = False
     request_info = http_request_pipeline(address, request)
     print(request_info.to_http_string())
     has_error = server_response = send_client_request_get_server_response(
-        request_info, client_socket, has_error)
-    if has_error == True:
+        request_info, client_socket)
+    if has_error:
         return
     send_server_response(server_response, client_socket)
 
@@ -217,7 +215,7 @@ def get_client_request(client_socket):
     return full_request.decode("utf-8", errors="ignore")
 
 
-def send_client_request_get_server_response(request_info, client_socket, has_error):
+def send_client_request_get_server_response(request_info, client_socket):
     if request_info.to_http_string() in cache:
         return cache[request_info.to_http_string()]
     if type(request_info) == HttpErrorResponse:
@@ -321,7 +319,7 @@ def extract_method(request):
 def extract_host(url, headers):
     url_match = re.match(r"/[a-zA-Z]*", url)
     if url_match:  # Search for the host in the header
-        host_match = re.findall(r"\: [\S]+", headers[0])
+        host_match = re.findall(r": [\S]+", headers[0])
         if host_match:
             port_match = re.findall(r"(:[0-9]+)$", headers[0])
             port_index = len(host_match[0])
@@ -371,7 +369,7 @@ def extract_port(url, headers):
 
 def extract_path(url):
     default_path = "/"
-    path_match = re.findall(r"\/[a-zA-Z]*$", url)
+    path_match = re.findall(r"/[a-zA-Z]*$", url)
     if path_match:
         default_path = path_match[0]
     return default_path
@@ -411,7 +409,6 @@ def extract_request_and_headers(http_raw_data):
 
 
 def validate_request(request, headers):
-
     if len(request) != 3:
         return HttpRequestState.INVALID_INPUT
 
@@ -435,11 +432,11 @@ def validate_request(request, headers):
 
 def validate_url(url, headers):
     url_match = re.match(r"/[a-zA-Z]*", url)
-    if url_match == None:
+    if url_match is None:
         url_match = re.match(
-            r"(http:\/\/)?([0-9a-zA-Z]+?\.)+[0-9a-zA-Z]+(\:[0-9]*)?(\/(([-_0-9a-zA-Z])*)?)?", url)
-        if url_match == None:
-            return HttpRequestState.INVALID_INPUT    # URL incorrect
+            r"(http://)?([0-9a-zA-Z]+?\.)+[0-9a-zA-Z]+(:[0-9]*)?(/(([-_0-9a-zA-Z])*)?)?", url)
+        if url_match is None:
+            return HttpRequestState.INVALID_INPUT  # URL incorrect
     else:  # The url is a relative path and there must be a header
         if len(headers) == 0:
             return HttpRequestState.INVALID_INPUT
@@ -451,17 +448,17 @@ def validate_url(url, headers):
 def validate_version(version):
     version_match = re.match(r"(HTTP/\d.\d)", version)
 
-    if version_match == None:
-        return HttpRequestState.INVALID_INPUT    # Version is missing / incorrect
+    if version_match is None:
+        return HttpRequestState.INVALID_INPUT  # Version is missing / incorrect
 
     return HttpRequestState.GOOD
 
 
 def validate_method(method):
     if method.lower() != "GET".lower():
-        if method.lower() in UNSUPPORTED_METHODS:   # Method is not GET and is UNSUPPORTED
+        if method.lower() in UNSUPPORTED_METHODS:  # Method is not GET and is UNSUPPORTED
             return HttpRequestState.NOT_SUPPORTED
-        return HttpRequestState.INVALID_INPUT   # Method is not GET
+        return HttpRequestState.INVALID_INPUT  # Method is not GET
     return HttpRequestState.GOOD
 
 
@@ -475,8 +472,8 @@ def validate_headers(headers):
 
 def validate_header(header):
     header_match = re.match(r"([a-zA-Z]+): ([\s\S]+)", header)
-    if header_match == None:
-        return HttpRequestState.INVALID_INPUT    # URL incorrect
+    if header_match is None:
+        return HttpRequestState.INVALID_INPUT  # URL incorrect
     return HttpRequestState.GOOD
 
 
@@ -492,15 +489,11 @@ def sanitize_http_request(request_info: HttpRequestInfo):
     """
     # If there's no headers create the host header
     if len(request_info.headers) == 0:
-        header = []
-        header.append("Host")
-        header.append(request_info.requested_host)
+        header = ["Host", request_info.requested_host]
         request_info.headers.append(header)
     # If the first header is not the host, create it
     elif request_info.headers[0][0] != "Host":
-        header = []
-        header.append("Host")
-        header.append(request_info.requested_host)
+        header = ["Host", request_info.requested_host]
         request_info.headers.insert(0, header)
 
     # Check if the host has a port and remove it
@@ -537,7 +530,7 @@ def get_arg(param_index, default=None):
             print(e)
             print(
                 f"[FATAL] The comand-line argument #[{param_index}] is missing")
-            exit(-1)    # Program execution failed.
+            exit(-1)  # Program execution failed.
 
 
 def check_file_name():

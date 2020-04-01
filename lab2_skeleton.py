@@ -9,7 +9,7 @@ import threading
 
 UNSUPPORTED_METHODS = ["head", "put", "delete", "post"]
 cache = {}
-
+has_error = False
 
 class HttpRequestInfo(object):
     """
@@ -200,9 +200,11 @@ def accept_clients(client_socket, address):
     request = get_client_request(client_socket)
     request_info = http_request_pipeline(address, request)
     print(request_info.to_http_string())
-    has_error = server_response = send_client_request_get_server_response(
+    server_response = send_client_request_get_server_response(
         request_info, client_socket)
+    global has_error
     if has_error:
+        has_error = False
         return
     send_server_response(server_response, client_socket)
 
@@ -219,11 +221,12 @@ def send_client_request_get_server_response(request_info, client_socket):
     if request_info.to_http_string() in cache:
         return cache[request_info.to_http_string()]
     if type(request_info) == HttpErrorResponse:
+        global has_error
         has_error = True
         client_socket.send(request_info.to_byte_array(
             request_info.to_http_string()))
         client_socket.close()
-        return has_error
+        return
     else:
         web_server = (request_info.requested_host,
                       int(request_info.requested_port))

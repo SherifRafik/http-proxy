@@ -1,5 +1,5 @@
 import sys
-from lab2_skeleton import check_http_request_validity, parse_http_request, HttpRequestState, HttpRequestInfo
+from http_proxy import check_http_request_validity, parse_http_request, HttpRequestState, HttpRequestInfo
 
 #######################################
 # Leave the code below as is. (Tests)
@@ -257,7 +257,7 @@ def main():
     # Sorted by checklist order, feel free to comment/un-comment
     # any of those functions.
     try:
-        #simple_http_validation_test_cases()
+        simple_http_validation_test_cases()
         simple_http_parsing_test_cases()
     except AssertionError as e:
         print("Test case failed:\n", str(e))

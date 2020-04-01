@@ -11,6 +11,7 @@ UNSUPPORTED_METHODS = ["head", "put", "delete", "post"]
 cache = {}
 has_error = False
 
+
 class HttpRequestInfo(object):
     """
     Represents a HTTP request information
@@ -187,7 +188,8 @@ def setup_sockets(proxy_port_number):
         # Establish a connection
         client_socket, address = server_socket.accept()
         # accept_clients(client_socket, address)
-        thread = threading.Thread(target=accept_clients, args=(client_socket, address,))
+        thread = threading.Thread(
+            target=accept_clients, args=(client_socket, address,))
         thread.start()
 
     # when calling socket.listen() pass a number
